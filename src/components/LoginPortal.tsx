@@ -221,8 +221,9 @@ export const LoginPortal: React.FC<LoginPortalProps> = ({
             {existingAccounts
               .filter(
                 (acc) =>
-                  (acc.gradYear.includes('2027') || acc.gradYear.includes('2028')) &&
-                  !acc.name.toLowerCase().includes('diya')
+                  Boolean(acc) &&
+                  (String(acc.gradYear || '').includes('2027') || String(acc.gradYear || '').includes('2028')) &&
+                  !String(acc.name || '').toLowerCase().includes('diya')
               )
               .map((acc) => (
                 <button
@@ -235,7 +236,7 @@ export const LoginPortal: React.FC<LoginPortalProps> = ({
                       : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100'
                   }`}
                 >
-                  {acc.name} ({acc.gradYear})
+                  {acc.name || 'Student'} ({acc.gradYear || 'IBDP'})
                 </button>
               ))}
           </div>

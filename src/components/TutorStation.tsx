@@ -239,7 +239,7 @@ export const TutorStation: React.FC<TutorStationProps> = ({
             </span>
           </div>
           <h1 className="text-xl sm:text-2xl font-bold tracking-tight">
-            Welcome, {currentUser.name} ({currentUser.gradYear})
+            Welcome, {currentUser.name || 'Student'} ({currentUser.gradYear || 'IBDP'})
           </h1>
           <p className="text-xs text-slate-300 mt-1 max-w-xl">
             IBDP Y-1 and Y-2 peer tutors! Students with IB grades 5, 6, and 7 can tutor. Manage your offerings, confirm bookings, track live session timers, or switch to Learner Mode.
@@ -329,7 +329,7 @@ export const TutorStation: React.FC<TutorStationProps> = ({
                   {currentUser.name}
                 </span>
                 <span className="text-xs font-semibold px-2 py-0.5 rounded bg-white border border-slate-200 text-slate-700">
-                  {currentUser.gradYear}
+                  {currentUser.gradYear || 'IBDP'}
                 </span>
               </div>
               <div className="text-xs text-slate-500 mt-0.5">

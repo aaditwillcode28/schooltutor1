@@ -139,7 +139,7 @@ export const Header: React.FC<HeaderProps> = ({
               >
                 <User className="w-3.5 h-3.5 text-slate-500" />
                 <span className="hidden sm:inline">
-                  {currentUser.name.split(' ')[0]} ({currentUser.gradYear.replace(' (IBDP Y-2)', '').replace(' (IBDP Y-1)', '')})
+                  {(currentUser.name || 'Student').split(' ')[0]} ({(currentUser.gradYear || 'IBDP').replace(' (IBDP Y-2)', '').replace(' (IBDP Y-1)', '')})
                 </span>
               </button>
 

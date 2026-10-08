@@ -45,15 +45,17 @@ export const ScheduleModal: React.FC<ScheduleModalProps> = ({
   const [learnerName, setLearnerName] = useState(currentUser?.name || '');
   const [learnerEmail, setLearnerEmail] = useState(currentUser?.email || '');
   const [notes, setNotes] = useState('');
+  const [formError, setFormError] = useState<string | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
   const [createdAptId, setCreatedAptId] = useState('');
 
   const handleBooking = (e: React.FormEvent) => {
     e.preventDefault();
     if (!learnerName.trim() || !learnerEmail.trim()) {
-      alert('Please provide your name and email to book this session.');
+      setFormError('Please provide your name and school email to book this session.');
       return;
     }
+    setFormError(null);
 
     const block = FREE_BLOCKS.find((b) => b.id === selectedBlockId);
 
@@ -96,7 +98,7 @@ export const ScheduleModal: React.FC<ScheduleModalProps> = ({
               {isSuccess ? 'Booking Request Submitted' : 'Schedule Peer Tutoring Session'}
             </h3>
             <p className="text-xs text-slate-500">
-              with {tutor.name} ({tutor.gradYear})
+              with {tutor.name || 'Peer Tutor'} ({tutor.gradYear || 'IBDP'})
             </p>
           </div>
           <button
@@ -161,6 +163,12 @@ export const ScheduleModal: React.FC<ScheduleModalProps> = ({
           </div>
         ) : (
           <form onSubmit={handleBooking} className="p-6 space-y-4">
+            {formError && (
+              <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold rounded-xl animate-in fade-in">
+                {formError}
+              </div>
+            )}
+
             {/* 1. Subject Selector */}
             <div>
               <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">

@@ -22,14 +22,18 @@ const STORAGE_KEYS = {
 };
 
 // Strict sanitizer: strips out any legacy middle school accounts or Diya Bhattarai
-function sanitizeAccounts(list: UserAccount[]): UserAccount[] {
-  return list.filter((u) => {
-    if (!u || !u.name || !u.gradYear) return false;
-    const nameLower = u.name.toLowerCase();
-    if (nameLower.includes('diya') || (u.email && u.email.toLowerCase().includes('diya'))) {
+function sanitizeAccounts(list: unknown): UserAccount[] {
+  if (!Array.isArray(list) || list.length === 0) return INITIAL_USERS;
+  const filtered = list.filter((u): u is UserAccount => {
+    if (!u || typeof u !== 'object') return false;
+    const name = String(u.name || '');
+    const grad = String(u.gradYear || '');
+    if (!name.trim()) return false;
+    const nameLower = name.toLowerCase();
+    if (nameLower.includes('diya') || (u.email && String(u.email).toLowerCase().includes('diya'))) {
       return false;
     }
-    const gradLower = u.gradYear.toLowerCase();
+    const gradLower = grad.toLowerCase();
     if (
       gradLower.includes('grade 5') ||
       gradLower.includes('grade 6') ||
@@ -40,8 +44,9 @@ function sanitizeAccounts(list: UserAccount[]): UserAccount[] {
       return false;
     }
     // Strictly must be Class of 2027 (Y-2) or Class of 2028 (Y-1)
-    return u.gradYear.includes('2027') || u.gradYear.includes('2028');
+    return grad.includes('2027') || grad.includes('2028');
   });
+  return filtered.length > 0 ? filtered : INITIAL_USERS;
 }
 
 export default function App() {
@@ -67,7 +72,6 @@ export default function App() {
   // Accounts state
   const [accounts, setAccounts] = useState<UserAccount[]>(() => {
     try {
-      localStorage.removeItem('ullens_tutor_accounts_v4');
       const stored = localStorage.getItem(STORAGE_KEYS.ACCOUNTS);
       if (stored) {
         const parsed = JSON.parse(stored);
@@ -80,12 +84,11 @@ export default function App() {
     return INITIAL_USERS;
   });
 
-  // Current user state (starts with Aadit Thapa)
+  // Current user state (defaults to Aadit Thapa)
   const [currentUserId, setCurrentUserId] = useState<string | null>(() => {
     try {
-      localStorage.removeItem('ullens_tutor_cur_user_v4');
       const stored = localStorage.getItem(STORAGE_KEYS.CURRENT_USER_ID);
-      if (stored && stored !== 'null' && !stored.toLowerCase().includes('diya')) {
+      if (stored && stored !== 'null' && stored !== 'undefined' && !stored.toLowerCase().includes('diya')) {
         return stored;
       }
     } catch (e) {
@@ -95,22 +98,25 @@ export default function App() {
   });
 
   const currentUser = useMemo(() => {
-    if (!currentUserId) return null;
-    return accounts.find((a) => a.id === currentUserId) || null;
+    if (!currentUserId) return accounts[0] || null;
+    const found = accounts.find((a) => a.id === currentUserId);
+    return found || accounts[0] || null;
   }, [accounts, currentUserId]);
 
   // Appointments state (scrubbing any legacy appointments with Diya)
   const [appointments, setAppointments] = useState<Appointment[]>(() => {
     try {
-      localStorage.removeItem('ullens_tutor_apts_v4');
       const stored = localStorage.getItem(STORAGE_KEYS.APPOINTMENTS);
       if (stored) {
-        const parsed: Appointment[] = JSON.parse(stored);
-        return parsed.filter(
-          (a) =>
-            !a.learnerName.toLowerCase().includes('diya') &&
-            !a.tutorName.toLowerCase().includes('diya')
-        );
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed.filter(
+            (a) =>
+              a &&
+              !String(a.learnerName || '').toLowerCase().includes('diya') &&
+              !String(a.tutorName || '').toLowerCase().includes('diya')
+          );
+        }
       }
     } catch (e) {
       console.error(e);
@@ -121,15 +127,17 @@ export default function App() {
   // Activity logs state (scrubbing any logs with Diya)
   const [activityLogs, setActivityLogs] = useState<ActivityLogItem[]>(() => {
     try {
-      localStorage.removeItem('ullens_tutor_logs_v4');
       const stored = localStorage.getItem(STORAGE_KEYS.ACTIVITY_LOGS);
       if (stored) {
-        const parsed: ActivityLogItem[] = JSON.parse(stored);
-        return parsed.filter(
-          (l) =>
-            !l.actorName.toLowerCase().includes('diya') &&
-            !l.message.toLowerCase().includes('diya')
-        );
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed.filter(
+            (l) =>
+              l &&
+              !String(l.actorName || '').toLowerCase().includes('diya') &&
+              !String(l.message || '').toLowerCase().includes('diya')
+          );
+        }
       }
     } catch (e) {
       console.error(e);
@@ -140,9 +148,11 @@ export default function App() {
   // Selected free blocks (defaulting to 2 demo blocks)
   const [selectedBlocks, setSelectedBlocks] = useState<FreeBlockId[]>(() => {
     try {
-      localStorage.removeItem('ullens_tutor_blocks_v4');
       const stored = localStorage.getItem(STORAGE_KEYS.SELECTED_BLOCKS);
-      if (stored) return JSON.parse(stored);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) return parsed;
+      }
     } catch (e) {
       console.error(e);
     }
@@ -491,24 +501,28 @@ export default function App() {
 
   // Filter tutors (strictly Class of 2027 Y-2 and Class of 2028 Y-1 IBDP students)
   const registeredTutors = useMemo(() => {
+    if (!Array.isArray(accounts)) return [];
     return accounts.filter(
       (u) =>
-        u.isTutorRegistered &&
-        u.tutorProfile &&
-        u.tutorProfile.subjects &&
-        u.tutorProfile.subjects.length > 0 &&
-        (u.gradYear.includes('2027') || u.gradYear.includes('2028')) &&
-        !u.name.toLowerCase().includes('diya')
+        Boolean(u) &&
+        Boolean(u.isTutorRegistered) &&
+        Boolean(u.tutorProfile) &&
+        Array.isArray(u.tutorProfile?.subjects) &&
+        (u.tutorProfile?.subjects?.length || 0) > 0 &&
+        (String(u.gradYear || '').includes('2027') || String(u.gradYear || '').includes('2028')) &&
+        !String(u.name || '').toLowerCase().includes('diya')
     );
   }, [accounts]);
 
   const filteredTutors = useMemo(() => {
     return registeredTutors.filter((tutor) => {
-      const profile = tutor.tutorProfile!;
+      const profile = tutor.tutorProfile;
+      if (!profile || !Array.isArray(profile.subjects)) return false;
 
       // 1. Free block matching
-      if (selectedBlocks.length > 0) {
-        const hasMutualBlock = profile.availableBlocks.some((b) =>
+      if (Array.isArray(selectedBlocks) && selectedBlocks.length > 0) {
+        const availableBlocks = Array.isArray(profile.availableBlocks) ? profile.availableBlocks : [];
+        const hasMutualBlock = availableBlocks.some((b) =>
           selectedBlocks.includes(b)
         );
         if (!hasMutualBlock) return false;
@@ -518,29 +532,31 @@ export default function App() {
       if (selectedGroup !== 'All Groups') {
         const groupMatch = profile.subjects.some(
           (s) =>
-            s.groupName === selectedGroup ||
-            selectedGroup.includes(s.groupName) ||
-            s.groupName.toLowerCase().includes(selectedGroup.toLowerCase())
+            s &&
+            (s.groupName === selectedGroup ||
+              selectedGroup.includes(s.groupName || '') ||
+              String(s.groupName || '').toLowerCase().includes(selectedGroup.toLowerCase()))
         );
         if (!groupMatch) return false;
       }
 
       // 3. Level filter
       if (selectedLevel !== 'ALL') {
-        const levelMatch = profile.subjects.some((s) => s.level === selectedLevel);
+        const levelMatch = profile.subjects.some((s) => s && s.level === selectedLevel);
         if (!levelMatch) return false;
       }
 
       // 4. Search query
       if (searchQuery.trim() !== '') {
         const q = searchQuery.toLowerCase().trim();
-        const matchesName = tutor.name.toLowerCase().includes(q);
-        const matchesNotes = profile.notes?.toLowerCase().includes(q);
-        const matchesGrad = tutor.gradYear.toLowerCase().includes(q);
+        const matchesName = String(tutor.name || '').toLowerCase().includes(q);
+        const matchesNotes = String(profile.notes || '').toLowerCase().includes(q);
+        const matchesGrad = String(tutor.gradYear || '').toLowerCase().includes(q);
         const matchesSubjects = profile.subjects.some(
           (s) =>
-            s.subjectName.toLowerCase().includes(q) ||
-            s.groupName.toLowerCase().includes(q)
+            s &&
+            (String(s.subjectName || '').toLowerCase().includes(q) ||
+              String(s.groupName || '').toLowerCase().includes(q))
         );
         if (!matchesName && !matchesNotes && !matchesSubjects && !matchesGrad) return false;
       }

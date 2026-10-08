@@ -30,10 +30,10 @@ export const TutorCard: React.FC<TutorCardProps> = ({
           <div>
             <div className="flex items-center gap-2">
               <h3 className="text-lg font-bold text-slate-900 tracking-tight">
-                {tutor.name}
+                {tutor.name || 'Peer Tutor'}
               </h3>
               <span className="text-xs font-semibold px-2 py-0.5 rounded bg-slate-100 text-slate-700">
-                {tutor.gradYear}
+                {tutor.gradYear || 'IBDP'}
               </span>
             </div>
             <div className="text-xs text-slate-500 mt-1">

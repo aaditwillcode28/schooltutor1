@@ -82,7 +82,7 @@ export const LearnerAppointments: React.FC<LearnerAppointmentsProps> = ({
           </h1>
           <p className="text-xs text-slate-500 mt-1">
             {currentUser
-              ? `Manage student sessions scheduled with you and appointments you booked (${currentUser.name} • ${currentUser.gradYear})`
+              ? `Manage student sessions scheduled with you and appointments you booked (${currentUser.name || 'Student'} • ${currentUser.gradYear || 'IBDP'})`
               : 'Sign in to view your scheduled tutoring appointments'}
           </p>
         </div>

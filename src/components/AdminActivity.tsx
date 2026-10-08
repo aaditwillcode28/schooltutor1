@@ -78,11 +78,11 @@ export const AdminActivity: React.FC<AdminActivityProps> = ({
   const totalLearners = accounts.filter((a) => !a.isTutorRegistered).length;
 
   const ibdpY1Tutors = accounts.filter(
-    (a) => a.isTutorRegistered && a.gradYear.includes('2028')
+    (a) => a.isTutorRegistered && String(a.gradYear || '').includes('2028')
   ).length;
 
   const ibdpY2Tutors = accounts.filter(
-    (a) => a.isTutorRegistered && a.gradYear.includes('2027')
+    (a) => a.isTutorRegistered && String(a.gradYear || '').includes('2027')
   ).length;
 
   const pendingCount = appointments.filter((a) => a.status === 'pending').length;
