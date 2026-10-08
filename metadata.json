@@ -1,0 +1,6 @@
+{
+  "name": "Ullens IBDP Peer Tutor Network",
+  "description": "Peer tutoring platform connecting high-achieving Grade 7 IBDP student tutors with learners across timetable free blocks.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

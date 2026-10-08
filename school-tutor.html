@@ -1,0 +1,1202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ullens IBDP Peer Tutor Network</title>
+  <meta name="description" content="Peer tutoring platform connecting Grade 7 IBDP student tutors with learners across timetable free blocks." />
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Fraunces:wght@600;700&display=swap" rel="stylesheet">
+  <!-- React & ReactDOM -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <!-- Babel Standalone -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    body {
+      font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    }
+    .font-display {
+      font-family: 'Fraunces', Georgia, serif;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-900 min-h-screen">
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useMemo } = React;
+
+    // 8 Free Blocks
+    const FREE_BLOCKS = [
+      { id: 'berry-red', name: 'Berry Red', bgClass: 'bg-[#800020] hover:bg-[#6b001b]', textClass: 'text-white', borderClass: 'border-[#580016]', hexCode: '#800020' },
+      { id: 'red', name: 'Red', bgClass: 'bg-[#dc2626] hover:bg-[#b91c1c]', textClass: 'text-white', borderClass: 'border-[#991b1b]', hexCode: '#dc2626' },
+      { id: 'blue', name: 'Blue', bgClass: 'bg-[#2563eb] hover:bg-[#1d4ed8]', textClass: 'text-white', borderClass: 'border-[#1e40af]', hexCode: '#2563eb' },
+      { id: 'yellow', name: 'Yellow', bgClass: 'bg-[#eab308] hover:bg-[#ca8a04]', textClass: 'text-amber-950 font-bold', borderClass: 'border-[#a16207]', hexCode: '#eab308' },
+      { id: 'orange', name: 'Orange', bgClass: 'bg-[#ea580c] hover:bg-[#c2410c]', textClass: 'text-white', borderClass: 'border-[#9a3412]', hexCode: '#ea580c' },
+      { id: 'green', name: 'Green', bgClass: 'bg-[#16a34a] hover:bg-[#15803d]', textClass: 'text-white', borderClass: 'border-[#166534]', hexCode: '#16a34a' },
+      { id: 'white', name: 'White', bgClass: 'bg-white hover:bg-slate-50', textClass: 'text-slate-900 font-bold', borderClass: 'border-slate-300 shadow-sm', hexCode: '#ffffff' },
+      { id: 'pink', name: 'Pink', bgClass: 'bg-[#ec4899] hover:bg-[#db2777]', textClass: 'text-white', borderClass: 'border-[#be185d]', hexCode: '#ec4899' }
+    ];
+
+    // Ullens IBDP Subjects (from the official sheet)
+    const ULLENS_IB_SUBJECTS = [
+      { id: 'eng-a-lang-lit', name: 'English A: Language and Literature', groupNumber: 1, groupName: 'Studies in Language and Literature', allowedLevels: ['HL', 'SL'] },
+      { id: 'nepali-a-lit', name: 'Nepali A: Literature', groupNumber: 1, groupName: 'Studies in Language and Literature', allowedLevels: ['HL', 'SL'] },
+      { id: 'eng-b', name: 'English B', groupNumber: 2, groupName: 'Language acquisition', allowedLevels: ['HL'] },
+      { id: 'french-ab-initio', name: 'French ab initio', groupNumber: 2, groupName: 'Language acquisition', allowedLevels: ['SL'] },
+      { id: 'spanish-ab-initio', name: 'Spanish ab initio', groupNumber: 2, groupName: 'Language acquisition', allowedLevels: ['SL'] },
+      { id: 'business-mgmt', name: 'Business Management', groupNumber: 3, groupName: 'Individuals and Societies', allowedLevels: ['HL', 'SL'] },
+      { id: 'economics', name: 'Economics', groupNumber: 3, groupName: 'Individuals and Societies', allowedLevels: ['HL', 'SL'] },
+      { id: 'psychology', name: 'Psychology', groupNumber: 3, groupName: 'Individuals and Societies', allowedLevels: ['HL', 'SL'] },
+      { id: 'ess-group-3', name: 'Environmental Systems and Societies', groupNumber: 3, groupName: 'Individuals and Societies', allowedLevels: ['HL', 'SL'] },
+      { id: 'biology', name: 'Biology', groupNumber: 4, groupName: 'Sciences', allowedLevels: ['HL', 'SL'] },
+      { id: 'chemistry', name: 'Chemistry', groupNumber: 4, groupName: 'Sciences', allowedLevels: ['HL', 'SL'] },
+      { id: 'computer-sciences', name: 'Computer Sciences', groupNumber: 4, groupName: 'Sciences', allowedLevels: ['HL', 'SL'] },
+      { id: 'ess-group-4', name: 'Environmental Systems and Societies (Sci)', groupNumber: 4, groupName: 'Sciences', allowedLevels: ['HL', 'SL'] },
+      { id: 'physics', name: 'Physics', groupNumber: 4, groupName: 'Sciences', allowedLevels: ['HL', 'SL'] },
+      { id: 'math-aa', name: 'Mathematics: Analysis and Approaches', groupNumber: 5, groupName: 'Mathematics', allowedLevels: ['HL', 'SL'] },
+      { id: 'math-ai', name: 'Mathematics: Applications and Interpretation', groupNumber: 5, groupName: 'Mathematics', allowedLevels: ['HL', 'SL'] },
+      { id: 'theatre', name: 'Theatre', groupNumber: 6, groupName: 'the Arts', allowedLevels: ['HL', 'SL'] },
+      { id: 'visual-arts', name: 'Visual Arts', groupNumber: 6, groupName: 'the Arts', allowedLevels: ['HL', 'SL'] },
+      { id: 'film-studies', name: 'Film Studies', groupNumber: 6, groupName: 'the Arts', allowedLevels: ['HL', 'SL'] }
+    ];
+
+    const GROUPS = [
+      { number: 1, name: 'Studies in Language and Literature' },
+      { number: 2, name: 'Language acquisition' },
+      { number: 3, name: 'Individuals and Societies' },
+      { number: 4, name: 'Sciences' },
+      { number: 5, name: 'Mathematics' },
+      { number: 6, name: 'the Arts' }
+    ];
+
+    const INITIAL_USERS = [
+      {
+        id: 'user-aadit-thapa',
+        name: 'Aadit Thapa',
+        gradYear: '2027 (IBDP Y-2)',
+        email: 'aadit.thapa@ullens.edu.np',
+        currentMode: 'tutor',
+        isTutorRegistered: true,
+        tutorProfile: {
+          subjects: [
+            { subjectId: 'math-aa', subjectName: 'Mathematics: Analysis and Approaches', groupName: 'Mathematics', level: 'HL', gradeScore: 7, scoreBadge: 'Grade 7 (100% Mock)' },
+            { subjectId: 'physics', subjectName: 'Physics', groupName: 'Sciences', level: 'HL', gradeScore: 7, scoreBadge: 'Grade 7 (IA 23/24)' }
+          ],
+          availableBlocks: ['berry-red', 'blue', 'green', 'white'],
+          capacity: 3,
+          notes: 'Focus on calculus optimization, vectors, paper 3 exploration questions, and Physics mechanics/fields. We walk through step-by-step past questions.',
+          publishedAt: '2026-09-28T04:00:00Z'
+        }
+      },
+      {
+        id: 'user-sneha-pradhan',
+        name: 'Sneha Pradhan',
+        gradYear: '2027 (IBDP Y-2)',
+        email: 'sneha.pradhan@ullens.edu.np',
+        currentMode: 'learner',
+        isTutorRegistered: true,
+        tutorProfile: {
+          subjects: [
+            { subjectId: 'economics', subjectName: 'Economics', groupName: 'Individuals and Societies', level: 'HL', gradeScore: 7, scoreBadge: 'Grade 7 (Predicted)' },
+            { subjectId: 'business-mgmt', subjectName: 'Business Management', groupName: 'Individuals and Societies', level: 'SL', gradeScore: 7, scoreBadge: 'Grade 7' }
+          ],
+          availableBlocks: ['red', 'yellow', 'pink', 'orange'],
+          capacity: 2,
+          notes: 'Specializing in macro policy diagrams, 15-mark evaluation essays, and quantitative economic models for paper 3.',
+          publishedAt: '2026-09-28T04:15:00Z'
+        }
+      },
+      {
+        id: 'user-aarav-shrestha',
+        name: 'Aarav Shrestha',
+        gradYear: '2026',
+        email: 'aarav.shrestha@ullens.edu.np',
+        currentMode: 'tutor',
+        isTutorRegistered: true,
+        tutorProfile: {
+          subjects: [
+            { subjectId: 'chemistry', subjectName: 'Chemistry', groupName: 'Sciences', level: 'HL', gradeScore: 7, scoreBadge: 'Grade 7 (Batch of 2026)' },
+            { subjectId: 'biology', subjectName: 'Biology', groupName: 'Sciences', level: 'HL', gradeScore: 7, scoreBadge: 'Grade 7' }
+          ],
+          availableBlocks: ['berry-red', 'yellow', 'green', 'white'],
+          capacity: 2,
+          notes: 'Organic chemistry reaction mechanisms, energetics cycles, and DBQ data-based questions. Flashcard drills & past papers.',
+          publishedAt: '2026-09-28T04:20:00Z'
+        }
+      },
+      {
+        id: 'user-riya-joshi',
+        name: 'Riya Joshi',
+        gradYear: '2027 (IBDP Y-2)',
+        email: 'riya.joshi@ullens.edu.np',
+        currentMode: 'tutor',
+        isTutorRegistered: true,
+        tutorProfile: {
+          subjects: [
+            { subjectId: 'eng-a-lang-lit', subjectName: 'English A: Language and Literature', groupName: 'Studies in Language and Literature', level: 'HL', gradeScore: 7, scoreBadge: 'Grade 7 (Paper 1 & 2)' }
+          ],
+          availableBlocks: ['red', 'blue', 'orange', 'pink'],
+          capacity: 2,
+          notes: 'Paper 1 guided textual analysis structuring and comparative essay templates for Paper 2.',
+          publishedAt: '2026-09-28T04:25:00Z'
+        }
+      }
+    ];
+
+    const INITIAL_APPOINTMENTS = [
+      {
+        id: 'apt-101',
+        tutorId: 'user-aadit-thapa',
+        tutorName: 'Aadit Thapa',
+        tutorEmail: 'aadit.thapa@ullens.edu.np',
+        learnerId: 'guest-1',
+        learnerName: 'Siddhartha Karki',
+        learnerEmail: 'siddhartha.karki@ullens.edu.np',
+        subjectId: 'math-aa',
+        subjectName: 'Mathematics: Analysis and Approaches',
+        level: 'HL',
+        blockId: 'berry-red',
+        blockName: 'Berry Red',
+        date: '2026-10-05',
+        notes: 'Implicit differentiation & related rates questions.',
+        status: 'confirmed'
+      },
+      {
+        id: 'apt-102',
+        tutorId: 'user-riya-joshi',
+        tutorName: 'Riya Joshi',
+        tutorEmail: 'riya.joshi@ullens.edu.np',
+        learnerId: 'user-aadit-thapa',
+        learnerName: 'Aadit Thapa',
+        learnerEmail: 'aadit.thapa@ullens.edu.np',
+        subjectId: 'eng-a-lang-lit',
+        subjectName: 'English A: Language and Literature',
+        level: 'HL',
+        blockId: 'blue',
+        blockName: 'Blue',
+        date: '2026-10-06',
+        notes: 'Help with Paper 1 stylistic analysis.',
+        status: 'confirmed'
+      }
+    ];
+
+    function App() {
+      const [accounts, setAccounts] = useState(() => {
+        try {
+          const s = localStorage.getItem('ullens_acc_v3');
+          if (s) return JSON.parse(s);
+        } catch(e) {}
+        return INITIAL_USERS;
+      });
+
+      const [currentUserId, setCurrentUserId] = useState(() => {
+        try {
+          const s = localStorage.getItem('ullens_uid_v3');
+          if (s && s !== 'null') return s;
+        } catch(e) {}
+        return null;
+      });
+
+      const currentUser = useMemo(() => {
+        if (!currentUserId) return null;
+        return accounts.find(a => a.id === currentUserId) || null;
+      }, [accounts, currentUserId]);
+
+      const [appointments, setAppointments] = useState(() => {
+        try {
+          const s = localStorage.getItem('ullens_apt_v3');
+          if (s) return JSON.parse(s);
+        } catch(e) {}
+        return INITIAL_APPOINTMENTS;
+      });
+
+      const [selectedBlocks, setSelectedBlocks] = useState(['berry-red', 'blue']);
+      const [searchQuery, setSearchQuery] = useState('');
+      const [selectedGroup, setSelectedGroup] = useState('All Groups');
+      const [selectedLevel, setSelectedLevel] = useState('ALL');
+      const [activeView, setActiveView] = useState('browse');
+      const [bookingTutor, setBookingTutor] = useState(null);
+      const [toastMsg, setToastMsg] = useState(null);
+
+      const notify = (msg) => {
+        setToastMsg(msg);
+      };
+
+      useEffect(() => {
+        if (!toastMsg) return;
+        const t = setTimeout(() => setToastMsg(null), 3500);
+        return () => clearTimeout(t);
+      }, [toastMsg]);
+
+      useEffect(() => {
+        try {
+          localStorage.setItem('ullens_acc_v3', JSON.stringify(accounts));
+        } catch(e) {}
+      }, [accounts]);
+
+      useEffect(() => {
+        try {
+          if (currentUserId) localStorage.setItem('ullens_uid_v3', currentUserId);
+          else localStorage.removeItem('ullens_uid_v3');
+        } catch(e) {}
+      }, [currentUserId]);
+
+      useEffect(() => {
+        try {
+          localStorage.setItem('ullens_apt_v3', JSON.stringify(appointments));
+        } catch(e) {}
+      }, [appointments]);
+
+      const handleToggleBlock = (blockId) => {
+        setSelectedBlocks(prev => prev.includes(blockId) ? prev.filter(b => b !== blockId) : [...prev, blockId]);
+      };
+
+      const handleToggleMode = () => {
+        if (!currentUser) {
+          setActiveView('portal');
+          notify('Please sign in or create an account to switch modes.');
+          return;
+        }
+        const nextMode = currentUser.currentMode === 'tutor' ? 'learner' : 'tutor';
+        const updated = accounts.map(a => {
+          if (a.id === currentUser.id) {
+            return {
+              ...a,
+              currentMode: nextMode,
+              isTutorRegistered: nextMode === 'tutor' ? true : a.isTutorRegistered,
+              tutorProfile: nextMode === 'tutor' && !a.tutorProfile ? {
+                subjects: [{ subjectId: 'math-aa', subjectName: 'Mathematics: Analysis and Approaches', groupName: 'Mathematics', level: 'HL', gradeScore: 7, scoreBadge: 'Grade 7' }],
+                availableBlocks: ['berry-red', 'blue'],
+                capacity: 2,
+                notes: 'Scored 7; focusing on core IB concepts.',
+                publishedAt: new Date().toISOString()
+              } : a.tutorProfile
+            };
+          }
+          return a;
+        });
+        setAccounts(updated);
+        notify(`Switched to ${nextMode === 'tutor' ? 'Tutor' : 'Learner'} Mode`);
+        setActiveView(nextMode === 'tutor' ? 'tutor-station' : 'browse');
+      };
+
+      const handleLoginOrRegister = (user, isNew) => {
+        const exists = accounts.some(a => a.id === user.id);
+        if (exists) {
+          setAccounts(prev => prev.map(a => a.id === user.id ? user : a));
+        } else {
+          setAccounts(prev => [user, ...prev]);
+        }
+        setCurrentUserId(user.id);
+        if (isNew) notify(`Account created! Welcome, ${user.name}.`);
+        else notify(`Signed in as ${user.name}.`);
+        setActiveView(user.currentMode === 'tutor' ? 'tutor-station' : 'browse');
+      };
+
+      const handleUpdateTutorProfile = (updatedProfile) => {
+        if (!currentUser) return;
+        setAccounts(prev => prev.map(a => a.id === currentUser.id ? { ...a, isTutorRegistered: true, tutorProfile: updatedProfile } : a));
+      };
+
+      const handleConfirmAppointment = (apt) => {
+        setAppointments(prev => [apt, ...prev]);
+        notify(`Appointment booked with ${apt.tutorName}!`);
+        setBookingTutor(null);
+      };
+
+      const handleCancelAppointment = (aptId) => {
+        setAppointments(prev => prev.map(a => a.id === aptId ? { ...a, status: 'cancelled' } : a));
+        notify('Appointment cancelled.');
+      };
+
+      const handleUpdateAppointmentStatus = (aptId, status) => {
+        setAppointments(prev => prev.map(a => a.id === aptId ? { ...a, status } : a));
+        notify(`Session marked as ${status}.`);
+      };
+
+      const registeredTutors = useMemo(() => {
+        return accounts.filter(u => u.isTutorRegistered && u.tutorProfile && u.tutorProfile.subjects && u.tutorProfile.subjects.length > 0);
+      }, [accounts]);
+
+      const filteredTutors = useMemo(() => {
+        return registeredTutors.filter(tutor => {
+          const p = tutor.tutorProfile;
+          if (selectedBlocks.length > 0) {
+            const hasMutual = p.availableBlocks.some(b => selectedBlocks.includes(b));
+            if (!hasMutual) return false;
+          }
+          if (selectedGroup !== 'All Groups') {
+            const matchGrp = p.subjects.some(s => s.groupName === selectedGroup || selectedGroup.includes(s.groupName));
+            if (!matchGrp) return false;
+          }
+          if (selectedLevel !== 'ALL') {
+            const matchLvl = p.subjects.some(s => s.level === selectedLevel);
+            if (!matchLvl) return false;
+          }
+          if (searchQuery.trim() !== '') {
+            const q = searchQuery.toLowerCase().trim();
+            const matchN = tutor.name.toLowerCase().includes(q);
+            const matchSub = p.subjects.some(s => s.subjectName.toLowerCase().includes(q) || s.groupName.toLowerCase().includes(q));
+            if (!matchN && !matchSub) return false;
+          }
+          return true;
+        });
+      }, [registeredTutors, selectedBlocks, selectedGroup, selectedLevel, searchQuery]);
+
+      const activeAppointmentsCount = useMemo(() => {
+        if (!currentUser) return 0;
+        return appointments.filter(a => a.learnerId === currentUser.id && a.status === 'confirmed').length;
+      }, [appointments, currentUser]);
+
+      return (
+        <div className="min-h-screen flex flex-col relative selection:bg-slate-900 selection:text-white">
+          {/* Toast Notification */}
+          {toastMsg && (
+            <div className="fixed top-4 right-4 z-50 bg-slate-900 text-white px-4 py-3 rounded-2xl shadow-xl border border-slate-700 flex items-center gap-3 text-xs font-semibold">
+              <span className="text-emerald-400 font-bold">✓</span>
+              <span>{toastMsg}</span>
+              <button onClick={() => setToastMsg(null)} className="text-slate-400 hover:text-white ml-2">✕</button>
+            </div>
+          )}
+
+          {/* Header */}
+          <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+              <button onClick={() => setActiveView(currentUser?.currentMode === 'tutor' ? 'tutor-station' : 'browse')} className="text-left font-bold text-xl text-slate-900">
+                Ullens IBDP Tutors
+              </button>
+
+              <nav className="hidden md:flex items-center gap-6 text-xs font-semibold text-slate-600">
+                <button onClick={() => setActiveView('browse')} className={`hover:text-slate-900 ${activeView === 'browse' ? 'text-slate-900 font-bold underline underline-offset-8' : ''}`}>
+                  Find Peer Tutors
+                </button>
+                {currentUser?.currentMode === 'tutor' ? (
+                  <button onClick={() => setActiveView('tutor-station')} className={`hover:text-slate-900 ${activeView === 'tutor-station' ? 'text-slate-900 font-bold underline underline-offset-8' : ''}`}>
+                    Tutor Station
+                  </button>
+                ) : (
+                  <button onClick={() => setActiveView('appointments')} className={`hover:text-slate-900 flex items-center gap-1.5 ${activeView === 'appointments' ? 'text-slate-900 font-bold underline underline-offset-8' : ''}`}>
+                    <span>My Appointments</span>
+                    {activeAppointmentsCount > 0 && <span className="w-5 h-5 rounded-full bg-slate-900 text-white text-[10px] flex items-center justify-center">{activeAppointmentsCount}</span>}
+                  </button>
+                )}
+                <button onClick={() => setActiveView('syllabus')} className={`hover:text-slate-900 ${activeView === 'syllabus' ? 'text-slate-900 font-bold underline underline-offset-8' : ''}`}>
+                  Class of 2027 Subjects
+                </button>
+              </nav>
+
+              <div className="flex items-center gap-2.5">
+                {currentUser ? (
+                  <>
+                    <button onClick={handleToggleMode} className={`px-3 py-1.5 rounded-xl text-xs font-bold border flex items-center gap-1.5 ${currentUser.currentMode === 'tutor' ? 'bg-indigo-50 text-indigo-900 border-indigo-200' : 'bg-emerald-50 text-emerald-900 border-emerald-200'}`}>
+                      <span>Mode: {currentUser.currentMode === 'tutor' ? 'Tutor' : 'Learner'}</span>
+                    </button>
+                    <button onClick={() => setActiveView('portal')} className="px-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-xs font-bold">
+                      {currentUser.name.split(' ')[0]}
+                    </button>
+                    <button onClick={() => { setCurrentUserId(null); notify('Signed out.'); setActiveView('browse'); }} className="p-1.5 rounded-xl border border-slate-200 hover:text-rose-600 text-xs" title="Sign Out">
+                      Sign Out
+                    </button>
+                  </>
+                ) : (
+                  <button onClick={() => setActiveView('portal')} className="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold shadow-xs">
+                    Sign In / Register
+                  </button>
+                )}
+              </div>
+            </div>
+          </header>
+
+          {/* Main Views */}
+          <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+            {activeView === 'portal' ? (
+              <LoginPortalComponent
+                accounts={accounts}
+                currentUser={currentUser}
+                onLoginOrRegister={handleLoginOrRegister}
+                onClose={() => setActiveView(currentUser?.currentMode === 'tutor' ? 'tutor-station' : 'browse')}
+              />
+            ) : activeView === 'tutor-station' && currentUser ? (
+              <TutorStationComponent
+                currentUser={currentUser}
+                appointments={appointments}
+                onUpdateProfile={handleUpdateTutorProfile}
+                onUpdateAptStatus={handleUpdateAppointmentStatus}
+                onCancelMyLearnerApt={handleCancelAppointment}
+                onSwitchMode={handleToggleMode}
+                onNotify={notify}
+              />
+            ) : activeView === 'appointments' ? (
+              <LearnerAppointmentsComponent
+                currentUser={currentUser}
+                appointments={appointments}
+                onCancelApt={handleCancelAppointment}
+                onBrowse={() => setActiveView('browse')}
+              />
+            ) : activeView === 'syllabus' ? (
+              <SyllabusComponent onSelectSubject={(name) => { setSearchQuery(name); setActiveView('browse'); }} />
+            ) : (
+              /* Primary Browse Flow */
+              <div className="space-y-6">
+                <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 sm:p-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <div>
+                    <span className="text-xs font-bold uppercase tracking-wider text-slate-500 block mb-1">
+                      Ullens School IBDP Peer Tutoring Network
+                    </span>
+                    <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 font-display">
+                      Connect with Peer Tutors Who Scored 7
+                    </h1>
+                    <p className="text-sm text-slate-600 mt-1 max-w-2xl">
+                      Select your school timetable free blocks below. Matching student tutors from the Class of 2027 (IBDP Y-2) and 2026 will appear automatically.
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <button onClick={() => setActiveView('portal')} className="px-4 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-50 whitespace-nowrap">
+                      {currentUser ? 'Switch Account' : 'Sign In / Register'}
+                    </button>
+                    <button onClick={handleToggleMode} className="px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold whitespace-nowrap">
+                      {currentUser?.currentMode === 'tutor' ? 'Go to Tutor Station' : 'I Want to Tutor'}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Free Block Selector (Clean pure colors) */}
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 md:p-6">
+                  <div className="flex items-center justify-between gap-3 mb-4">
+                    <div>
+                      <h2 className="text-base sm:text-lg font-bold text-slate-900">Select Your Free Block</h2>
+                      <p className="text-xs text-slate-500 mt-0.5">Choose your open timetable blocks to automatically display matching peer tutors</p>
+                    </div>
+                    {selectedBlocks.length > 0 && (
+                      <button onClick={() => setSelectedBlocks([])} className="text-xs font-semibold text-rose-600 hover:underline">
+                        Clear selection ({selectedBlocks.length})
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2.5">
+                    {FREE_BLOCKS.map(block => {
+                      const isSel = selectedBlocks.includes(block.id);
+                      return (
+                        <button
+                          key={block.id}
+                          onClick={() => handleToggleBlock(block.id)}
+                          className={`relative py-5 px-3 rounded-xl border-2 font-extrabold text-sm capitalize text-center transition-all ${block.bgClass} ${block.textClass} ${block.borderClass} ${isSel ? 'ring-4 ring-offset-2 ring-slate-900 shadow-md scale-[1.03]' : 'opacity-90 hover:opacity-100 hover:scale-[1.01]'}`}
+                        >
+                          {isSel && (
+                            <span className={`absolute top-2 right-2 w-4 h-4 rounded-full flex items-center justify-center text-[10px] ${block.id === 'white' || block.id === 'yellow' ? 'bg-slate-900 text-white' : 'bg-white text-slate-900'}`}>
+                              ✓
+                            </span>
+                          )}
+                          <span>{block.name}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <div className="mt-4 pt-4 border-t border-slate-100 flex flex-wrap items-center gap-2">
+                    <span className="text-xs font-bold uppercase tracking-wider text-slate-400 mr-1">Selected Blocks:</span>
+                    {selectedBlocks.length === 0 ? (
+                      <span className="text-xs text-slate-500 italic">No blocks selected. Showing all tutors, or select a color above.</span>
+                    ) : (
+                      selectedBlocks.map(id => {
+                        const b = FREE_BLOCKS.find(item => item.id === id);
+                        if (!b) return null;
+                        return (
+                          <span key={id} className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold bg-slate-100 text-slate-800 border border-slate-200">
+                            <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: b.hexCode }}></span>
+                            <span>{b.name}</span>
+                            <button onClick={() => handleToggleBlock(id)} className="hover:text-rose-600 ml-1">✕</button>
+                          </span>
+                        );
+                      })
+                    )}
+                  </div>
+                </div>
+
+                {/* Search & Filters */}
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 sm:p-5">
+                  <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
+                    <div className="md:col-span-6">
+                      <input
+                        type="text"
+                        placeholder="Search subjects or tutor names (e.g. Math AA, Physics, Aadit)..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900/10"
+                      />
+                    </div>
+                    <div className="md:col-span-4">
+                      <select
+                        value={selectedGroup}
+                        onChange={(e) => setSelectedGroup(e.target.value)}
+                        className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-700 bg-white"
+                      >
+                        <option value="All Groups">All IB Groups</option>
+                        {GROUPS.map(g => <option key={g.number} value={g.name}>Group {g.number}: {g.name}</option>)}
+                      </select>
+                    </div>
+                    <div className="md:col-span-2 flex items-center justify-between gap-1 p-1 bg-slate-100 rounded-xl border border-slate-200 text-xs font-bold">
+                      <button onClick={() => setSelectedLevel('ALL')} className={`flex-1 py-1.5 rounded-lg ${selectedLevel === 'ALL' ? 'bg-white shadow-xs' : 'text-slate-600'}`}>All</button>
+                      <button onClick={() => setSelectedLevel('HL')} className={`flex-1 py-1.5 rounded-lg ${selectedLevel === 'HL' ? 'bg-white shadow-xs' : 'text-slate-600'}`}>HL</button>
+                      <button onClick={() => setSelectedLevel('SL')} className={`flex-1 py-1.5 rounded-lg ${selectedLevel === 'SL' ? 'bg-white shadow-xs' : 'text-slate-600'}`}>SL</button>
+                    </div>
+                  </div>
+                  <div className="mt-3 pt-3 border-t border-slate-100 text-xs text-slate-500 flex justify-between">
+                    <span><strong>{filteredTutors.length}</strong> matching peer tutor{filteredTutors.length === 1 ? '' : 's'}</span>
+                    {(searchQuery || selectedGroup !== 'All Groups' || selectedLevel !== 'ALL') && (
+                      <button onClick={() => { setSearchQuery(''); setSelectedGroup('All Groups'); setSelectedLevel('ALL'); }} className="text-slate-600 hover:underline">
+                        Reset filters
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Tutors Grid */}
+                <div>
+                  {filteredTutors.length === 0 ? (
+                    <div className="bg-white rounded-3xl border border-slate-200 p-12 text-center space-y-3">
+                      <h3 className="text-base font-bold text-slate-800">No tutors match your free blocks and search</h3>
+                      <p className="text-xs text-slate-500">Try clearing selected blocks or adjusting your search filters.</p>
+                      <button onClick={() => setSelectedBlocks([])} className="px-4 py-2 bg-slate-900 text-white rounded-xl text-xs font-bold">Show all free blocks</button>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                      {filteredTutors.map(tutor => (
+                        <div key={tutor.id} className="bg-white rounded-2xl border border-slate-200/90 shadow-sm p-6 flex flex-col justify-between">
+                          <div>
+                            <div className="flex items-start justify-between gap-3 mb-3">
+                              <div>
+                                <h3 className="text-lg font-bold text-slate-900">{tutor.name}</h3>
+                                <span className="text-xs font-semibold px-2 py-0.5 rounded bg-slate-100 text-slate-700">{tutor.gradYear}</span>
+                                <div className="text-xs text-slate-500 mt-1">{tutor.email}</div>
+                              </div>
+                              <span className="px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-bold">
+                                IB Score 7 Tutor
+                              </span>
+                            </div>
+
+                            <div className="mb-3">
+                              <div className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">Subjects Offered</div>
+                              <div className="space-y-1.5">
+                                {tutor.tutorProfile.subjects.map((sub, i) => (
+                                  <div key={i} className="flex items-center justify-between p-2 rounded-lg bg-slate-50 border border-slate-100 text-xs">
+                                    <div className="flex items-center gap-2">
+                                      <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${sub.level === 'HL' ? 'bg-indigo-100 text-indigo-800' : 'bg-emerald-100 text-emerald-800'}`}>{sub.level}</span>
+                                      <span className="font-semibold text-slate-800">{sub.subjectName}</span>
+                                    </div>
+                                    <span className="text-slate-500 text-[11px] font-medium">{sub.scoreBadge || 'Grade 7'}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+
+                            {tutor.tutorProfile.notes && (
+                              <p className="text-xs text-slate-600 bg-amber-50/50 p-2.5 rounded-lg border border-amber-100/70 mb-3 italic">
+                                "{tutor.tutorProfile.notes}"
+                              </p>
+                            )}
+
+                            <div className="mb-4">
+                              <div className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">Available Free Blocks</div>
+                              <div className="flex flex-wrap gap-1.5">
+                                {tutor.tutorProfile.availableBlocks.map(bId => {
+                                  const b = FREE_BLOCKS.find(item => item.id === bId);
+                                  if (!b) return null;
+                                  const isMut = selectedBlocks.includes(bId);
+                                  return (
+                                    <span key={bId} className={`px-2.5 py-1 rounded-md text-xs font-bold border ${b.bgClass} ${b.textClass} ${b.borderClass} ${isMut ? 'ring-2 ring-emerald-500' : 'opacity-90'}`}>
+                                      {b.name} {isMut && '★'}
+                                    </span>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="pt-3 border-t border-slate-100 mt-2">
+                            <div className="text-xs text-slate-500 mb-3">Capacity: Max {tutor.tutorProfile.capacity} student{tutor.tutorProfile.capacity > 1 ? 's' : ''}/session</div>
+                            <button
+                              onClick={() => setBookingTutor(tutor)}
+                              className="w-full py-2.5 px-4 rounded-xl text-xs font-bold text-white bg-slate-900 hover:bg-slate-800 transition-colors shadow-sm"
+                            >
+                              Schedule Appointment →
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </main>
+
+          {/* Schedule Booking Modal */}
+          {bookingTutor && (
+            <ScheduleModalComponent
+              tutor={bookingTutor}
+              currentUser={currentUser}
+              selectedLearnerBlocks={selectedBlocks}
+              onClose={() => setBookingTutor(null)}
+              onConfirm={handleConfirmAppointment}
+            />
+          )}
+        </div>
+      );
+    }
+
+    // Login Portal Component
+    function LoginPortalComponent({ accounts, currentUser, onLoginOrRegister, onClose }) {
+      const [name, setName] = useState('');
+      const [gradYear, setGradYear] = useState('2027 (IBDP Y-2)');
+      const [email, setEmail] = useState('');
+      const [role, setRole] = useState('learner');
+
+      const submit = (e) => {
+        e.preventDefault();
+        if (!name.trim() || !email.trim()) return;
+        const existing = accounts.find(a => a.email.toLowerCase() === email.trim().toLowerCase());
+        if (existing) {
+          onLoginOrRegister({ ...existing, name: name.trim(), gradYear, currentMode: role, isTutorRegistered: role === 'tutor' ? true : existing.isTutorRegistered }, false);
+          return;
+        }
+        const newUser = {
+          id: 'user-' + Date.now().toString().slice(-6),
+          name: name.trim(),
+          gradYear,
+          email: email.trim(),
+          currentMode: role,
+          isTutorRegistered: role === 'tutor',
+          tutorProfile: role === 'tutor' ? {
+            subjects: [{ subjectId: 'math-aa', subjectName: 'Mathematics: Analysis and Approaches', groupName: 'Mathematics', level: 'HL', gradeScore: 7, scoreBadge: 'Grade 7' }],
+            availableBlocks: ['berry-red', 'blue', 'green'],
+            capacity: 2,
+            notes: 'Scored 7; peer tutoring sessions for IBDP.',
+            publishedAt: new Date().toISOString()
+          } : undefined
+        };
+        onLoginOrRegister(newUser, true);
+      };
+
+      return (
+        <div className="min-h-[75vh] flex items-center justify-center py-6 px-4">
+          <div className="max-w-md w-full bg-white rounded-3xl border border-slate-200 shadow-xl overflow-hidden">
+            <div className="bg-slate-900 text-white p-7 text-center relative">
+              <h1 className="text-xl font-bold">Student Access Portal</h1>
+              <p className="text-xs text-slate-300 mt-1">Ullens School IBDP Peer Tutoring Network</p>
+              {onClose && <button onClick={onClose} className="absolute top-4 right-4 text-xs text-slate-300 hover:text-white">✕ Close</button>}
+            </div>
+
+            <form onSubmit={submit} className="p-7 space-y-4">
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">Full Name</label>
+                <input type="text" required placeholder="e.g. Maya Rana" value={name} onChange={e => setName(e.target.value)} className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900/10" />
+              </div>
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">Graduation Year / Class</label>
+                <select value={gradYear} onChange={e => setGradYear(e.target.value)} className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm bg-white">
+                  <option value="2027 (IBDP Y-2)">Class of 2027 (IBDP Y-2)</option>
+                  <option value="2028 (IBDP Y-1)">Class of 2028 (IBDP Y-1)</option>
+                  <option value="2026">Class of 2026</option>
+                  <option value="2029">Class of 2029</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">Email</label>
+                <input type="email" required placeholder="name@ullens.edu.np" value={email} onChange={e => setEmail(e.target.value)} className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900/10" />
+              </div>
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">Role</label>
+                <div className="grid grid-cols-2 gap-3">
+                  <button type="button" onClick={() => setRole('learner')} className={`py-3 px-3 rounded-xl border-2 text-center ${role === 'learner' ? 'border-slate-900 bg-slate-50 font-bold text-slate-900' : 'border-slate-200 text-slate-600'}`}>
+                    <div className="text-xs">Learner</div>
+                    <div className="text-[10px] text-slate-500 font-normal">Looking for tutors</div>
+                  </button>
+                  <button type="button" onClick={() => setRole('tutor')} className={`py-3 px-3 rounded-xl border-2 text-center ${role === 'tutor' ? 'border-slate-900 bg-slate-50 font-bold text-slate-900' : 'border-slate-200 text-slate-600'}`}>
+                    <div className="text-xs">Tutor (Score 7)</div>
+                    <div className="text-[10px] text-slate-500 font-normal">Offer IB subjects</div>
+                  </button>
+                </div>
+              </div>
+              <button type="submit" className="w-full py-3 px-4 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition-all shadow-sm">
+                Enter Peer Tutor Network →
+              </button>
+            </form>
+
+            <div className="p-5 bg-slate-50 border-t border-slate-100">
+              <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-2">Or quick sign-in as registered student:</div>
+              <div className="flex flex-wrap gap-1.5">
+                {accounts.map(acc => (
+                  <button key={acc.id} onClick={() => onLoginOrRegister(acc, false)} className="px-2.5 py-1 rounded-lg text-xs font-semibold border bg-white text-slate-700 hover:bg-slate-100">
+                    {acc.name} ({acc.currentMode})
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // Tutor Station Component
+    function TutorStationComponent({ currentUser, appointments, onUpdateProfile, onUpdateAptStatus, onCancelMyLearnerApt, onSwitchMode, onNotify }) {
+      const p = currentUser.tutorProfile || {
+        subjects: [{ subjectId: 'math-aa', subjectName: 'Mathematics: Analysis and Approaches', groupName: 'Mathematics', level: 'HL', gradeScore: 7 }],
+        availableBlocks: ['berry-red', 'blue', 'green'],
+        capacity: 2,
+        notes: '',
+        publishedAt: new Date().toISOString()
+      };
+
+      const [selectedBlocks, setSelectedBlocks] = useState(p.availableBlocks);
+      const [subjectSelections, setSubjectSelections] = useState(() => {
+        const map = {};
+        ULLENS_IB_SUBJECTS.forEach(sub => {
+          const ex = p.subjects.find(s => s.subjectId === sub.id);
+          map[sub.id] = { isSelected: !!ex, level: ex ? ex.level : sub.allowedLevels[0] };
+        });
+        return map;
+      });
+      const [capacity, setCapacity] = useState(p.capacity || 2);
+      const [notes, setNotes] = useState(p.notes || '');
+      const [postedSuccess, setPostedSuccess] = useState(false);
+
+      const toggleBlock = (id) => {
+        setSelectedBlocks(prev => prev.includes(id) ? prev.filter(b => b !== id) : [...prev, id]);
+      };
+
+      const toggleSubject = (id) => {
+        setSubjectSelections(prev => ({
+          ...prev,
+          [id]: { ...prev[id], isSelected: !prev[id]?.isSelected }
+        }));
+      };
+
+      const toggleLevel = (id, allowed) => {
+        if (allowed.length <= 1) return;
+        setSubjectSelections(prev => ({
+          ...prev,
+          [id]: { ...prev[id], level: prev[id]?.level === 'HL' ? 'SL' : 'HL' }
+        }));
+      };
+
+      const handlePost = (e) => {
+        e.preventDefault();
+        const offered = [];
+        ULLENS_IB_SUBJECTS.forEach(sub => {
+          const st = subjectSelections[sub.id];
+          if (st && st.isSelected) {
+            offered.push({ subjectId: sub.id, subjectName: sub.name, groupName: sub.groupName, level: st.level, gradeScore: 7, scoreBadge: 'Grade 7 Tutor' });
+          }
+        });
+        if (offered.length === 0) { alert('Please check at least one subject.'); return; }
+        if (selectedBlocks.length === 0) { alert('Please select at least one free block.'); return; }
+
+        onUpdateProfile({ subjects: offered, availableBlocks: selectedBlocks, capacity, notes: notes.trim() || 'Scored 7; ready for sessions.', publishedAt: new Date().toISOString() });
+        setPostedSuccess(true);
+        onNotify('Successfully posted your tutor offerings!');
+        setTimeout(() => setPostedSuccess(false), 3500);
+      };
+
+      const incoming = appointments.filter(a => a.tutorId === currentUser.id);
+      const myBookings = appointments.filter(a => a.learnerId === currentUser.id);
+
+      return (
+        <div className="space-y-8">
+          <div className="bg-slate-900 text-white rounded-3xl p-6 sm:p-7 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-300 block mb-1">Tutor Station</span>
+              <h1 className="text-xl sm:text-2xl font-bold">Welcome, {currentUser.name} ({currentUser.gradYear})</h1>
+              <p className="text-xs text-slate-300 mt-1">Configure your free blocks and subjects. You can switch to Learner Mode anytime if you need help in other subjects.</p>
+            </div>
+            <button onClick={onSwitchMode} className="px-4 py-2.5 bg-white/10 hover:bg-white/20 border border-white/20 rounded-xl text-xs font-bold text-white whitespace-nowrap">
+              Switch to Learner Mode ⇄
+            </button>
+          </div>
+
+          {postedSuccess && (
+            <div className="p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-2xl text-xs font-bold">
+              ✓ Your tutor offerings have been successfully posted to the peer network!
+            </div>
+          )}
+
+          {/* MY ACTIVE POST PREVIEW */}
+          <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 sm:p-7">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-4 mb-4">
+              <div>
+                <h2 className="text-base sm:text-lg font-bold text-slate-900">My Active Post</h2>
+                <p className="text-xs text-slate-500">Live preview of your profile card as learners see it</p>
+              </div>
+              <span className="px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800">● Live on Search</span>
+            </div>
+
+            <div className="p-5 rounded-2xl border bg-slate-50/60 max-w-2xl space-y-3">
+              <div className="flex justify-between items-start">
+                <div>
+                  <h3 className="font-bold text-slate-900">{currentUser.name} <span className="text-xs font-normal text-slate-500">({currentUser.gradYear})</span></h3>
+                  <div className="text-xs text-slate-500">{currentUser.email}</div>
+                </div>
+                <span className="px-2 py-0.5 rounded text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">Score 7 Tutor</span>
+              </div>
+
+              <div>
+                <div className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Subjects Offered:</div>
+                <div className="flex flex-wrap gap-1.5">
+                  {p.subjects.map((s, i) => (
+                    <span key={i} className="px-2 py-1 bg-white border rounded-lg text-xs font-semibold">
+                      <strong className="text-indigo-700 mr-1">{s.level}</strong> {s.subjectName}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <div className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Free Blocks:</div>
+                <div className="flex flex-wrap gap-1.5">
+                  {p.availableBlocks.map(bId => {
+                    const b = FREE_BLOCKS.find(item => item.id === bId);
+                    if (!b) return null;
+                    return <span key={bId} className={`px-2 py-0.5 rounded text-xs font-bold border ${b.bgClass} ${b.textClass}`}>{b.name}</span>;
+                  })}
+                </div>
+              </div>
+
+              <div className="text-xs text-slate-600">Capacity: <strong>Max {p.capacity} student{p.capacity > 1 ? 's' : ''}/session</strong></div>
+              {p.notes && <p className="text-xs text-slate-600 italic bg-white p-2.5 rounded-xl border">"{p.notes}"</p>}
+            </div>
+          </div>
+
+          {/* Form */}
+          <form onSubmit={handlePost} className="space-y-8">
+            {/* 1. Free Blocks */}
+            <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 sm:p-7">
+              <h2 className="text-base sm:text-lg font-bold text-slate-900 mb-1">1. Available Free Blocks</h2>
+              <p className="text-xs text-slate-500 mb-4">Click all free blocks when you can host tutoring:</p>
+              <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2.5">
+                {FREE_BLOCKS.map(block => {
+                  const isSel = selectedBlocks.includes(block.id);
+                  return (
+                    <button key={block.id} type="button" onClick={() => toggleBlock(block.id)} className={`py-5 px-3 rounded-xl border-2 font-extrabold text-sm capitalize text-center transition-all ${block.bgClass} ${block.textClass} ${block.borderClass} ${isSel ? 'ring-4 ring-offset-2 ring-slate-900 scale-[1.03]' : 'opacity-40 hover:opacity-80'}`}>
+                      {block.name} {isSel && '✓'}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* 2. Ullens Subject Table */}
+            <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 sm:p-7">
+              <h2 className="text-base sm:text-lg font-bold text-slate-900 mb-1">2. Subjects Offered at Ullens IBDP</h2>
+              <p className="text-xs text-slate-500 mb-4">Check subjects and toggle between <strong>HL</strong> and <strong>SL</strong>:</p>
+
+              <div className="border border-slate-200 rounded-2xl overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-slate-100 font-bold uppercase tracking-wider text-slate-800 border-b">
+                    <tr>
+                      <th className="py-3 px-4 w-1/4 border-r">GROUPS</th>
+                      <th className="py-3 px-4 w-1/2 border-r">SUBJECTS</th>
+                      <th className="py-3 px-4">LEVEL (TOGGLE HL / SL)</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-200">
+                    {GROUPS.map(grp => {
+                      const groupSubs = ULLENS_IB_SUBJECTS.filter(s => s.groupNumber === grp.number);
+                      return groupSubs.map((sub, idx) => {
+                        const sel = subjectSelections[sub.id] || { isSelected: false, level: sub.allowedLevels[0] };
+                        const canToggle = sub.allowedLevels.length > 1;
+                        return (
+                          <tr key={sub.id} className={sel.isSelected ? 'bg-slate-50 font-semibold' : ''}>
+                            {idx === 0 && (
+                              <td rowSpan={groupSubs.length} className="py-3 px-4 font-bold border-r align-top bg-slate-50/50">
+                                <div>Group {grp.number}</div>
+                                <div className="text-[11px] text-slate-500 font-normal">{grp.name}</div>
+                              </td>
+                            )}
+                            <td className="py-3 px-4 border-r">
+                              <label className="flex items-center gap-3 cursor-pointer">
+                                <input type="checkbox" checked={sel.isSelected} onChange={() => toggleSubject(sub.id)} className="w-4 h-4 rounded text-slate-900" />
+                                <span className={sel.isSelected ? 'font-bold text-slate-900' : 'text-slate-700'}>{sub.name}</span>
+                              </label>
+                            </td>
+                            <td className="py-3 px-4">
+                              {canToggle ? (
+                                <button type="button" onClick={() => toggleLevel(sub.id, sub.allowedLevels)} className={`px-3 py-1 rounded-lg text-xs font-extrabold ${sel.level === 'HL' ? 'bg-indigo-600 text-white' : 'bg-emerald-600 text-white'}`}>
+                                  {sel.level} (Click to switch)
+                                </button>
+                              ) : (
+                                <span className="px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-200 text-slate-800">{sub.allowedLevels[0]} (Fixed)</span>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      });
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* 3. Capacity & Notes */}
+            <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 sm:p-7 space-y-4 max-w-xl">
+              <h2 className="text-base sm:text-lg font-bold text-slate-900">3. Capacity & Notes</h2>
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">Session Capacity</label>
+                <div className="flex items-center gap-3">
+                  <button type="button" onClick={() => setCapacity(c => Math.max(1, c - 1))} className="w-10 h-10 border rounded-xl font-bold bg-slate-50 text-slate-700">-</button>
+                  <div className="px-6 py-2 border rounded-xl font-bold bg-white text-slate-900 min-w-[120px] text-center">{capacity} {capacity === 1 ? 'Student' : 'Students'}</div>
+                  <button type="button" onClick={() => setCapacity(c => c + 1)} className="w-10 h-10 border rounded-xl font-bold bg-slate-50 text-slate-700">+</button>
+                  <span className="text-xs text-slate-500">{capacity === 1 ? '(1-on-1 tutoring)' : `(Group up to ${capacity})`}</span>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">Class Notes</label>
+                <textarea rows={3} value={notes} onChange={e => setNotes(e.target.value)} placeholder="Topics, past papers, IA tips..." className="w-full p-3 rounded-xl border text-xs" />
+              </div>
+
+              <button type="submit" className="px-6 py-3 bg-slate-900 text-white rounded-xl text-xs font-bold shadow-sm">
+                Post Offerings →
+              </button>
+            </div>
+          </form>
+
+          {/* Bookings Section */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6">
+              <h2 className="text-base font-bold text-slate-900 mb-3">Sessions Booked with Me ({incoming.length})</h2>
+              {incoming.length === 0 ? <p className="text-xs text-slate-400">No learner bookings yet.</p> : (
+                <div className="space-y-3">
+                  {incoming.map(apt => (
+                    <div key={apt.id} className="p-4 rounded-xl border bg-slate-50/50 text-xs space-y-2">
+                      <div className="flex justify-between font-bold">
+                        <span>{apt.learnerName} ({apt.learnerEmail})</span>
+                        <span className="uppercase text-[10px] text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded">{apt.status}</span>
+                      </div>
+                      <div>{apt.subjectName} ({apt.level}) · <strong>{apt.blockName} Block</strong> on {apt.date}</div>
+                      {apt.notes && <div className="italic text-slate-500">"{apt.notes}"</div>}
+                      {apt.status === 'confirmed' && (
+                        <div className="text-right">
+                          <button onClick={() => onUpdateAptStatus(apt.id, 'completed')} className="text-emerald-700 font-bold border border-emerald-300 px-2 py-1 rounded">Mark Completed</button>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6">
+              <h2 className="text-base font-bold text-slate-900 mb-3">My Bookings with Other Tutors ({myBookings.length})</h2>
+              {myBookings.length === 0 ? <p className="text-xs text-slate-400">You haven't booked any sessions with other tutors yet.</p> : (
+                <div className="space-y-3">
+                  {myBookings.map(apt => (
+                    <div key={apt.id} className="p-4 rounded-xl border bg-slate-50/50 text-xs space-y-2">
+                      <div className="flex justify-between font-bold">
+                        <span>Tutor: {apt.tutorName}</span>
+                        <span className="uppercase text-[10px] text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded">{apt.status}</span>
+                      </div>
+                      <div>{apt.subjectName} ({apt.level}) · <strong>{apt.blockName} Block</strong> on {apt.date}</div>
+                      {apt.status === 'confirmed' && (
+                        <div className="text-right">
+                          <button onClick={() => onCancelMyLearnerApt(apt.id)} className="text-rose-600 font-bold">Cancel Booking</button>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // Learner Appointments Component
+    function LearnerAppointmentsComponent({ currentUser, appointments, onCancelApt, onBrowse }) {
+      const myBookings = currentUser ? appointments.filter(a => a.learnerId === currentUser.id) : [];
+
+      return (
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
+          <div className="flex justify-between items-center border-b pb-4">
+            <h2 className="text-lg font-bold text-slate-900">My Scheduled Sessions</h2>
+            <button onClick={onBrowse} className="px-3.5 py-1.5 bg-slate-900 text-white rounded-xl text-xs font-bold">Find Tutors</button>
+          </div>
+          {myBookings.length === 0 ? (
+            <div className="py-12 text-center text-xs text-slate-500">No scheduled sessions yet.</div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {myBookings.map(apt => (
+                <div key={apt.id} className="p-5 rounded-2xl border bg-slate-50/50 text-xs space-y-3">
+                  <div className="flex justify-between font-bold">
+                    <span>Tutor: {apt.tutorName}</span>
+                    <span className="uppercase text-[10px] text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded">{apt.status}</span>
+                  </div>
+                  <div><strong>{apt.subjectName}</strong> ({apt.level})</div>
+                  <div>Block: <strong>{apt.blockName}</strong> · Date: {apt.date}</div>
+                  {apt.notes && <p className="italic text-slate-600">"{apt.notes}"</p>}
+                  <div className="flex justify-between items-center pt-2 border-t text-slate-500">
+                    <span>Email: {apt.tutorEmail}</span>
+                    {apt.status === 'confirmed' && <button onClick={() => onCancelApt(apt.id)} className="text-rose-600 font-bold">Cancel</button>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    // Syllabus Directory Component
+    function SyllabusComponent({ onSelectSubject }) {
+      return (
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-6">
+          <div>
+            <h2 className="text-xl font-bold font-display">Subjects Offered at Ullens IBDP — Class of 2027 (IBDP Y-2)</h2>
+            <p className="text-xs text-slate-500 mt-1">Candidates select 6 subjects (3 Higher Level and 3 Standard Level). Click any subject to filter available peer tutors.</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {GROUPS.map(grp => {
+              const subs = ULLENS_IB_SUBJECTS.filter(s => s.groupNumber === grp.number);
+              return (
+                <div key={grp.number} className="p-4 border rounded-xl bg-slate-50/50">
+                  <div className="font-bold text-xs mb-3 text-slate-900 border-b pb-2">Group {grp.number}: {grp.name}</div>
+                  <div className="space-y-2">
+                    {subs.map(s => (
+                      <div key={s.id} onClick={() => onSelectSubject(s.name)} className="p-2.5 bg-white border rounded-lg flex justify-between text-xs cursor-pointer hover:border-slate-400">
+                        <span className="font-semibold">{s.name}</span>
+                        <div className="flex gap-1">{s.allowedLevels.map(l => <span key={l} className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-100">{l}</span>)}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      );
+    }
+
+    // Schedule Modal Component
+    function ScheduleModalComponent({ tutor, currentUser, selectedLearnerBlocks, onClose, onConfirm }) {
+      const p = tutor.tutorProfile;
+      const [selectedSub, setSelectedSub] = useState(p.subjects[0]);
+      const defaultBlock = p.availableBlocks.find(b => selectedLearnerBlocks.includes(b)) || p.availableBlocks[0];
+      const [selectedBlockId, setSelectedBlockId] = useState(defaultBlock);
+      const [date, setDate] = useState(() => {
+        const d = new Date();
+        d.setDate(d.getDate() + 1);
+        return d.toISOString().split('T')[0];
+      });
+      const [name, setName] = useState(currentUser?.name || '');
+      const [email, setEmail] = useState(currentUser?.email || '');
+      const [notes, setNotes] = useState('');
+
+      const submit = (e) => {
+        e.preventDefault();
+        if (!name.trim() || !email.trim()) { alert('Please enter your name and email.'); return; }
+        const blk = FREE_BLOCKS.find(b => b.id === selectedBlockId);
+        const newApt = {
+          id: 'apt-' + Date.now().toString().slice(-6),
+          tutorId: tutor.id,
+          tutorName: tutor.name,
+          tutorEmail: tutor.email,
+          learnerId: currentUser?.id || 'guest-' + Date.now(),
+          learnerName: name.trim(),
+          learnerEmail: email.trim(),
+          subjectId: selectedSub.subjectId,
+          subjectName: selectedSub.subjectName,
+          level: selectedSub.level,
+          blockId: selectedBlockId,
+          blockName: blk?.name || 'Selected Block',
+          date,
+          notes: notes.trim(),
+          status: 'confirmed'
+        };
+        onConfirm(newApt);
+      };
+
+      return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center border-b pb-3">
+              <h3 className="font-bold text-base">Schedule Session with {tutor.name}</h3>
+              <button onClick={onClose} className="text-slate-400 hover:text-slate-700">✕</button>
+            </div>
+
+            <form onSubmit={submit} className="space-y-4 text-xs">
+              <div>
+                <label className="block font-bold mb-1">Select Subject</label>
+                <div className="space-y-1.5">
+                  {p.subjects.map((sub, i) => (
+                    <label key={i} className={`flex justify-between p-2.5 border rounded-xl cursor-pointer ${selectedSub.subjectId === sub.subjectId ? 'border-slate-900 bg-slate-50' : ''}`}>
+                      <div className="flex items-center gap-2">
+                        <input type="radio" name="sub" checked={selectedSub.subjectId === sub.subjectId} onChange={() => setSelectedSub(sub)} />
+                        <span className="font-bold">{sub.subjectName}</span>
+                        <span className="px-1.5 py-0.5 rounded bg-slate-200 text-[10px] font-bold">{sub.level}</span>
+                      </div>
+                      <span className="text-emerald-700 font-bold">Grade 7</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-bold mb-1">Select Free Block</label>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  {p.availableBlocks.map(bId => {
+                    const blk = FREE_BLOCKS.find(b => b.id === bId);
+                    if (!blk) return null;
+                    return (
+                      <button key={bId} type="button" onClick={() => setSelectedBlockId(bId)} className={`p-2 rounded-xl border text-center font-bold ${blk.bgClass} ${blk.textClass} ${selectedBlockId === bId ? 'ring-2 ring-slate-900' : 'opacity-90'}`}>
+                        {blk.name}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-bold mb-1">Date</label>
+                <input type="date" required value={date} onChange={e => setDate(e.target.value)} className="w-full p-2 border rounded-xl" />
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block font-bold mb-1">Your Name</label>
+                  <input type="text" required value={name} onChange={e => setName(e.target.value)} className="w-full p-2 border rounded-xl" />
+                </div>
+                <div>
+                  <label className="block font-bold mb-1">Your Email</label>
+                  <input type="email" required value={email} onChange={e => setEmail(e.target.value)} className="w-full p-2 border rounded-xl" />
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-bold mb-1">Questions / Topics to Cover</label>
+                <textarea rows={2} required value={notes} onChange={e => setNotes(e.target.value)} placeholder="Topic details or questions..." className="w-full p-2 border rounded-xl" />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2">
+                <button type="button" onClick={onClose} className="px-4 py-2 font-semibold text-slate-600">Cancel</button>
+                <button type="submit" className="px-5 py-2.5 bg-slate-900 text-white rounded-xl font-bold">Confirm Appointment</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      );
+    }
+
+    ReactDOM.render(<App />, document.getElementById('root'));
+  </script>
+</body>
+</html>
